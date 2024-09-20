@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /* eslint-disable max-depth */
 import {
   AccountController,
@@ -423,6 +424,10 @@ export class UniversalAdapterClient {
       JSON.stringify(this.appKit?.getCaipNetwork())
     )
 
+    if (this.appKit?.getCaipAddress() && !this.appKit?.getIsConnectedState()) {
+      this.appKit?.setIsConnected(true, this.appKit?.getActiveChainNamespace() || 'eip155')
+    }
+
     this.syncAccount()
     this.watchWalletConnect()
   }
@@ -455,7 +460,7 @@ export class UniversalAdapterClient {
     const provider = await this.getWalletConnectProvider()
     const namespaces = provider?.session?.namespaces || {}
 
-    function disconnectHandler() {
+    const disconnectHandler = () => {
       Object.keys(namespaces).forEach(key => {
         AccountController.resetAccount(key as ChainNamespace)
       })
@@ -463,6 +468,8 @@ export class UniversalAdapterClient {
 
       SafeLocalStorage.removeItem(SafeLocalStorageKeys.WALLET_ID)
       SafeLocalStorage.removeItem(SafeLocalStorageKeys.ACTIVE_CAIP_NETWORK)
+
+      AccountController.setIsConnected(false, this.appKit?.getActiveChainNamespace() || 'eip155')
 
       provider?.removeListener('disconnect', disconnectHandler)
       provider?.removeListener('accountsChanged', accountsChangedHandler)

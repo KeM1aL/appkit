@@ -23,6 +23,11 @@ describe('UniversalAdapter', () => {
   })
 
   describe('UniversalAdapter - Initialization', () => {
+    it('should not be connected after construct', () => {
+      expect(mockAppKit.getIsConnectedState()).toBe(false)
+      expect(mockAppKit.getCaipAddress()).toBeUndefined()
+    })
+
     it('should set caipNetworks to provided caipNetworks options', () => {
       expect(universalAdapter?.caipNetworks).toEqual(mockOptions.networks)
     })
@@ -63,7 +68,7 @@ describe('UniversalAdapter', () => {
       })
     })
 
-    it('should call setDefaultNetwork and set first caipNetwork on setActiveCaipNetwork when there is no active caipNetwork', async () => {
+    it('should call setIsConnected, setCaipAddress, setDefaultNetwork and set first caipNetwork on setActiveCaipNetwork when there is no active caipNetwork', async () => {
       vi.spyOn(NetworkController, 'state', 'get').mockReturnValue({
         caipNetwork: undefined,
         requestedCaipNetworks: [mainnet, solana],
@@ -77,6 +82,16 @@ describe('UniversalAdapter', () => {
 
       const mockOnUri = vi.fn()
       await universalAdapter?.connectionControllerClient?.connectWalletConnect?.(mockOnUri)
+      expect(mockAppKit.setIsConnected).toHaveBeenCalledWith(true, 'eip155')
+      expect(mockAppKit.setCaipAddress).toHaveBeenCalledWith(
+        mockProvider.session?.namespaces['eip155']?.accounts[0],
+        'eip155'
+      )
+
+      expect(mockAppKit.getCaipAddress()).toBe(
+        mockProvider.session?.namespaces['eip155']?.accounts[0]
+      )
+      expect(mockAppKit.getIsConnectedState()).toBe(true)
 
       expect(adapterSpy).toHaveBeenCalledWith(mockProvider.session?.namespaces)
       expect(networkControllerSpy).toHaveBeenCalledWith(mainnet)
